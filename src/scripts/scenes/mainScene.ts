@@ -1,4 +1,5 @@
 import ExampleObject from '../objects/exampleObject';
+import { Beam } from '../objects/beam';
 
 export default class MainScene extends Phaser.Scene {
   private exampleObject: ExampleObject;
@@ -10,6 +11,7 @@ export default class MainScene extends Phaser.Scene {
   private player;
   private cursorKeys;
   private spacebar;
+  private projectiles;
 
   constructor() {
     super({ key: 'MainScene' });
@@ -65,6 +67,7 @@ export default class MainScene extends Phaser.Scene {
     this.player.setCollideWorldBounds(true);
 
     this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.projectiles = this.add.group();
   }
 
   moveShip(ship, speed) {
@@ -94,7 +97,11 @@ export default class MainScene extends Phaser.Scene {
     this.movePlayerManager();
 
     if(Phaser.Input.Keyboard.JustDown(this.spacebar)) {
-      console.log("Fire!");
+      this.shootBeam();
+    }
+    for(var i = 0; i < this.projectiles.getChildren().length; i++) {
+      var beam = this.projectiles.getChildren()[i];
+      beam.update();
     }
   }
 
@@ -114,5 +121,9 @@ export default class MainScene extends Phaser.Scene {
     } else {
       this.player.setVelocityY(0);
     }
+  }
+
+  shootBeam() {
+    var beam = new Beam(this);
   }
 }
