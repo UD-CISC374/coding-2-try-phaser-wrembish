@@ -28,9 +28,9 @@ export default class PreloadScene extends Phaser.Scene {
       frameHeight: 16
     });
 
-    this.load.spritesheet("player", "assets/spritesheets/player.png", {
-      frameWidth: 16,
-      frameHeight: 24
+    this.load.spritesheet("player", "assets/spritesheets/oppa.png", {
+      frameWidth: 20,
+      frameHeight: 40
     });
 
     this.load.spritesheet("beam", "assets/spritesheets/beam.png", {
@@ -39,6 +39,12 @@ export default class PreloadScene extends Phaser.Scene {
     });
 
     this.load.bitmapFont("pixelFont", "assets/font/font.png", "assets/font/font.xml");
+
+    this.load.audio("audio_beam", ["assets/sounds/beam.ogg", "assets/sounds/beam.mp3"]);
+    this.load.audio("audio_explosion", ["assets/sounds/explosion.ogg", "assets/sounds/explosion.mp3"]);
+    this.load.audio("audio_pickup", ["assets/sounds/pickup.ogg", "assets/sounds/pickup.mp3"]);
+    this.load.audio("music", ["assets/sounds/sci-fi_platformer12.ogg", "assets/sounds/sci-fi_platformer12.mp3"]);
+    this.load.audio("leeroy", ["assets/sounds/leeroyJenkins.ogg", "assets/sounds/leeroyJenkins.mp3"]);
   }
 
   create() {
@@ -93,7 +99,7 @@ export default class PreloadScene extends Phaser.Scene {
     this.anims.create({
       key: "thrust",
       frames: this.anims.generateFrameNumbers("player", {}),
-      frameRate: 20,
+      frameRate: 10,
       repeat: -1
     });
 
