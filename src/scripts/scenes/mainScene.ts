@@ -68,10 +68,12 @@ export default class MainScene extends Phaser.Scene {
 
     this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.projectiles = this.add.group();
+
   }
 
   moveShip(ship, speed) {
     ship.y += speed;
+
     if (ship.y > this.scale.height) {
       this.resetShipPos(ship);
     }
@@ -97,6 +99,7 @@ export default class MainScene extends Phaser.Scene {
     this.movePlayerManager();
 
     if(Phaser.Input.Keyboard.JustDown(this.spacebar)) {
+
       this.shootBeam();
     }
     for(var i = 0; i < this.projectiles.getChildren().length; i++) {
@@ -117,6 +120,7 @@ export default class MainScene extends Phaser.Scene {
     if(this.cursorKeys.up.isDown) {
       this.player.setVelocityY(-200);
     } else if(this.cursorKeys.down.isDown) {
+
       this.player.setVelocityY(200);
     } else {
       this.player.setVelocityY(0);
