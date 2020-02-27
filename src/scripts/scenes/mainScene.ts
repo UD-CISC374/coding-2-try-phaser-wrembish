@@ -171,6 +171,9 @@ export default class MainScene extends Phaser.Scene {
 
     this.explosionSound.play();
     this.score -= 500;    
+    if(this.score < 0) {
+      this.score = 0;
+    }
   }
 
   resetPlayer() {
