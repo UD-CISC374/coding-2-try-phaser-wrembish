@@ -29,7 +29,7 @@ export default class PreloadScene extends Phaser.Scene {
     });
 
     this.load.spritesheet("player", "assets/spritesheets/oppa.png", {
-      frameWidth: 20,
+      frameWidth: 14.4,
       frameHeight: 40
     });
 
