@@ -20,6 +20,7 @@ export default class MainScene extends Phaser.Scene {
   // bitmaptexts
   private scoreLabel: Phaser.GameObjects.BitmapText;
   private scoreMultLabel: Phaser.GameObjects.BitmapText;
+  private restartLabel: Phaser.GameObjects.BitmapText;
 
   // number
   private score: number;
@@ -45,6 +46,10 @@ export default class MainScene extends Phaser.Scene {
     // create the background
     this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, "background");
     this.background.setOrigin(0, 0);
+
+    // add restart option
+    this.add.bitmapText(this.scale.width-80,this.scale.height-10,"pixelFont","press r to restart...",10);
+    this.input.keyboard.on("keydown_R", this.restart, this);
 
     // add player sprite
     this.player = this.physics.add.sprite(this.scale.width / 2 - 8, this.scale.height - 64, "player");
@@ -91,8 +96,11 @@ export default class MainScene extends Phaser.Scene {
 
     // create a group for the projectiles and powerUps
     this.projectiles = this.add.group();
+    this.projectiles.runChildUpdate = true;
     this.powerUps = this.add.group();
+    this.powerUps.runChildUpdate = true;
     this.enemies = this.add.group();
+    this.enemies.runChildUpdate = true;
 
     // create keyboard interaction
     this.cursorKeys = this.input.keyboard.createCursorKeys();
@@ -107,7 +115,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   // Pad the score with zeroes
-  zeroPad(number, size) {
+  zeroPad(number: number, size: number): string {
     var stringNumber = String(number);
     while (stringNumber.length < (size || 2)) {
       stringNumber = "0" + stringNumber;
@@ -139,10 +147,13 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.explosionSound.play();
-    this.score -= this.scorePoint/10;
     this.scoreMult = 1;    
-    if(this.score < this.scorePoint/2) {
+    if(this.scorePoint > 250 && this.score < this.scorePoint/2) {
       this.score = this.scorePoint/2;
+    } else if(this.score < 25) {
+      this.score = 0;
+    } else {
+      this.score -= this.scorePoint/10;
     }
   }
 
@@ -214,6 +225,15 @@ export default class MainScene extends Phaser.Scene {
     this.beamSound.play();
   }
 
+  restart() {
+    this.score=0;
+    this.scoreMult=1;
+    this.scorePoint=250;
+    this.enemies.clear(true,true);
+    this.projectiles.clear(true,true);
+    this.powerUps.clear(true,true);
+  }
+
   // update function
   update() {
     // scroll background
@@ -232,22 +252,6 @@ export default class MainScene extends Phaser.Scene {
       if (this.player.active) {
         this.shootBeam();
       }
-    }
-
-    // call the beams' update functions
-    for (var i = 0; i < this.projectiles.getChildren().length; i++) {
-      var beam = this.projectiles.getChildren()[i];
-      beam.update();
-    }
-
-    for(let i = 0; i < this.powerUps.getChildren().length; i++) {
-      let powerUp = this.powerUps.getChildren()[i];
-      powerUp.update();
-    }
-
-    for(let i = 0; i < this.enemies.getChildren().length; i++) {
-      let enemy = this.enemies.getChildren()[i];
-      enemy.update();
     }
     
     // randomly generate powerups
