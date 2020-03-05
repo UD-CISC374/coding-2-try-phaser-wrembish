@@ -24,6 +24,7 @@ export default class MainScene extends Phaser.Scene {
   // number
   private score: number;
   private scoreMult: number;
+  private scorePoint: number;
 
   // sounds
   private beamSound: Phaser.Sound.BaseSound;
@@ -41,7 +42,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    // add sprites
+    // create the background
     this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, "background");
     this.background.setOrigin(0, 0);
 
@@ -64,7 +65,7 @@ export default class MainScene extends Phaser.Scene {
       rate: 1,
       detune: 0,
       seek: 0,
-      loop: false,
+      loop: true,
       delay: 0
     }
     this.music.play(musicConfig);
@@ -72,6 +73,7 @@ export default class MainScene extends Phaser.Scene {
     // make the score board at the top of the screen
     this.score = 0;
     this.scoreMult = 1;
+    this.scorePoint = 250;
     // --makes the black rectangle background for the scoreboard--
     var graphics = this.add.graphics();
     graphics.fillStyle(0x000000, 1);
@@ -117,7 +119,7 @@ export default class MainScene extends Phaser.Scene {
   pickPowerUp(player, powerUp) {
     powerUp.destroy();
     this.pickupSound.play();
-    this.scoreMult = this.scoreMult * 2;
+    this.scoreMult++;
   }
 
   hurtPlayer(player, enemy) {
@@ -137,10 +139,10 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.explosionSound.play();
-    this.score -= 500;
+    this.score -= this.scorePoint/10;
     this.scoreMult = 1;    
-    if(this.score < 0) {
-      this.score = 0;
+    if(this.score < this.scorePoint/2) {
+      this.score = this.scorePoint/2;
     }
   }
 
@@ -167,13 +169,19 @@ export default class MainScene extends Phaser.Scene {
   }
 
   hitEnemy(projectile, enemy) {
+    enemy.hitpoints -= (1 + this.scoreMult/10);
+    if(enemy.hitpoints > 0) {
+      projectile.destroy();
+      return;
+    }
     var explosion = new Explosion(this, enemy.x, enemy.y);
 
     projectile.destroy();
     enemy.destroy();
-    this.score += (10 * this.scoreMult);
-    if(this.score !== 0 && this.score % 200 == 0) {
+    this.score += (enemy.pointsWorth * this.scoreMult);
+    if(this.score > this.scorePoint) {
       this.scoreSound.play();
+      this.scorePoint = this.scorePoint * 2;
     }
     
 
@@ -243,7 +251,7 @@ export default class MainScene extends Phaser.Scene {
     }
     
     // randomly generate powerups
-    if(Math.random() > 0.995) {
+    if(Math.random() > 0.997) {
       this.addPowerUp();
     }
 
