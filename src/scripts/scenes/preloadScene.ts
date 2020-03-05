@@ -110,7 +110,7 @@ export default class PreloadScene extends Phaser.Scene {
       repeat: -1
     });
 
-    // start main scene
+    // start main scene?
     this.add.text(20,20, "Press SPACEBAR to start...");
   }
 
