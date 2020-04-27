@@ -1,11 +1,17 @@
 export default class PreloadScene extends Phaser.Scene {
+  private spacebar: Phaser.Input.Keyboard.Key;
+
   constructor() {
     super({ key: 'PreloadScene' });
   }
 
   preload() {
+    // create spacebar interaction
+    this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    // load images
     this.load.image("background", "assets/images/background.png");
 
+    // load spritesheets
     this.load.spritesheet("ship", "assets/spritesheets/ship.png",{
       frameWidth: 16,
       frameHeight: 16
@@ -22,24 +28,23 @@ export default class PreloadScene extends Phaser.Scene {
       frameWidth: 16,
       frameHeight: 16
     });
-
     this.load.spritesheet("power-up", "assets/spritesheets/power-up.png",{
       frameWidth: 16,
       frameHeight: 16
     });
-
     this.load.spritesheet("player", "assets/spritesheets/oppa.png", {
-      frameWidth: 20,
+      frameWidth: 14.4,
       frameHeight: 40
     });
-
     this.load.spritesheet("beam", "assets/spritesheets/beam.png", {
       frameWidth: 16,
       frameHeight: 16
     });
 
+    // load bitmapFonts
     this.load.bitmapFont("pixelFont", "assets/font/font.png", "assets/font/font.xml");
 
+    // load audio
     this.load.audio("audio_beam", ["assets/sounds/beam.ogg", "assets/sounds/beam.mp3"]);
     this.load.audio("audio_explosion", ["assets/sounds/explosion.ogg", "assets/sounds/explosion.mp3"]);
     this.load.audio("audio_pickup", ["assets/sounds/pickup.ogg", "assets/sounds/pickup.mp3"]);
@@ -48,9 +53,7 @@ export default class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.text(20,20, "Loading game...");
-    this.scene.start('MainScene');
-
+    // create animations
     this.anims.create({
       key: "ship1_anim",
       frames: this.anims.generateFrameNumbers("ship",{}),
@@ -76,7 +79,6 @@ export default class PreloadScene extends Phaser.Scene {
       repeat: 0,
       hideOnComplete: true
     });
-
     this.anims.create({
       key: "red",
       frames: this.anims.generateFrameNumbers("power-up", {
@@ -95,19 +97,26 @@ export default class PreloadScene extends Phaser.Scene {
       frameRate: 20,
       repeat: -1
     });
-
     this.anims.create({
       key: "thrust",
       frames: this.anims.generateFrameNumbers("player", {}),
       frameRate: 10,
       repeat: -1
     });
-
     this.anims.create({
       key: "beam_anim",
       frames: this.anims.generateFrameNumbers("beam", {}),
       frameRate: 20,
       repeat: -1
     });
+
+    // start main scene?
+    this.add.text(20,20, "Press SPACEBAR to start...");
+  }
+
+  update() {
+    if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
+      this.scene.start('MainScene');
+    }
   }
 }

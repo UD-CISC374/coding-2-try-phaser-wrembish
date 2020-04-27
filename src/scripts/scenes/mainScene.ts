@@ -1,110 +1,93 @@
-import ExampleObject from '../objects/exampleObject';
 import { Beam } from '../objects/beam';
 import { Explosion } from '../objects/explosion';
+import { PowerUp } from '../objects/powerUp';
+import { EasyEnemy } from '../objects/easyEnemy';
+import { MediumEnemy } from '../objects/meadiumEnemy';
+import { HardEnemy } from '../objects/hardEnemy';
 
 export default class MainScene extends Phaser.Scene {
-  private exampleObject: ExampleObject;
-  private background;
-  private ship1;
-  private ship2;
-  private ship3;
-  private ship4;
-  private ship5;
-  private ship6;
-  private powerUps;
-  private player;
+  // tilesprites
+  private background: Phaser.GameObjects.TileSprite;
+
+  // sprites
+  private player: Phaser.Physics.Arcade.Sprite;
+
+  // groups
+  private powerUps: Phaser.GameObjects.Group;
+  private enemies: Phaser.GameObjects.Group;
+  private projectiles: Phaser.GameObjects.Group;
+
+  // bitmaptexts
+  private scoreLabel: Phaser.GameObjects.BitmapText;
+  private livesLabel: Phaser.GameObjects.BitmapText;
+  private restartLabel: Phaser.GameObjects.BitmapText;
+
+  // number
+  private score: number;
+  private scoreMult: number;
+  private scorePoint: number;
+  private playerLives: number;
+  private playerBaseDmg: number;
+  private playerExp: number;
+  private dmgUpExp: number;
+
+  // sounds
+  private beamSound: Phaser.Sound.BaseSound;
+  private explosionSound: Phaser.Sound.BaseSound;
+  private pickupSound: Phaser.Sound.BaseSound;
+  private music: Phaser.Sound.BaseSound;
+  private scoreSound: Phaser.Sound.BaseSound;
+
+  // misc
   private cursorKeys;
-  private spacebar;
-  private projectiles;
-  private enemies;
-  private scoreLabel;
-  private score;
-  private beamSound;
-  private explosionSound;
-  private pickupSound;
-  private music;
-  private scoreMult;
-  private scoreSound;
+  private spacebar: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super({ key: 'MainScene' });
   }
 
   create() {
-    this.scoreMult = 1;
-    this.background = this.add.tileSprite(0, 0,
-      this.scale.width, this.scale.height, "background");
+    // create the background
+    this.background = this.add.tileSprite(0, 0, this.scale.width, this.scale.height, "background");
     this.background.setOrigin(0, 0);
 
-    this.ship1 = this.add.sprite(this.scale.width / 2 - 50, this.scale.height / 2, "ship");
-    this.ship2 = this.add.sprite(this.scale.width / 2, this.scale.height / 2, "ship2");
-    this.ship3 = this.add.sprite(this.scale.width / 2 + 50, this.scale.height / 2, "ship3");
-    this.ship4 = this.add.sprite(0, 0, "ship1");
-    this.ship5 = this.add.sprite(0, 0, "ship2");
-    this.ship6 = this.add.sprite(0, 0, "ship3");
+    // add restart option
+    this.add.bitmapText(this.scale.width-80,this.scale.height-10,"pixelFont","press r to restart...",10);
+    this.input.keyboard.on("keydown_R", this.restart, this);
 
-    this.enemies = this.physics.add.group();
-    this.enemies.add(this.ship1);
-    this.enemies.add(this.ship2);
-    this.enemies.add(this.ship3);
-    this.enemies.add(this.ship4);
-    this.enemies.add(this.ship5);
-    this.enemies.add(this.ship6);
-
-    this.ship1.play("ship1_anim");
-    this.ship2.play("ship2_anim");
-    this.ship3.play("ship3_anim");
-    this.ship4.play("ship1_anim");
-    this.ship5.play("ship2_anim");
-    this.ship6.play("ship3_anim");
-
-    this.ship1.setInteractive();
-    this.ship2.setInteractive();
-    this.ship3.setInteractive();
-    this.ship4.setInteractive();
-    this.ship5.setInteractive();
-    this.ship6.setInteractive();
-
-    this.input.on('gameobjectdown', this.destroyShip, this);
-
-    this.powerUps = this.physics.add.group();
-    this.physics.add.collider(this.powerUps, this.powerUps);
-
-    var maxObjects = 4;
-    for (var i = 0; i <= maxObjects; i++) {
-      var powerUp = this.physics.add.sprite(16, 16, "power-up");
-      this.powerUps.add(powerUp);
-      powerUp.setRandomPosition(0, 0, this.scale.width, this.scale.height);
-
-      if (Math.random() > 0.5) {
-        powerUp.play("red");
-      } else {
-        powerUp.play("gray");
-      }
-
-      powerUp.setVelocity(100, 100);
-      powerUp.setCollideWorldBounds(true);
-      powerUp.setBounce(1);
-    }
-
+    // add player sprite
     this.player = this.physics.add.sprite(this.scale.width / 2 - 8, this.scale.height - 64, "player");
-    this.player.play("thrust");
-    this.cursorKeys = this.input.keyboard.createCursorKeys();
     this.player.setCollideWorldBounds(true);
+    this.player.play("thrust");
+    this.playerLives = 3;
+    this.playerBaseDmg = 1;
+    this.playerExp = 0;
+    this.dmgUpExp = 250;
 
-    this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.projectiles = this.add.group();
+    // add sounds
+    this.beamSound = this.sound.add("audio_beam");
+    this.explosionSound = this.sound.add("audio_explosion");
+    this.pickupSound = this.sound.add("audio_pickup");
+    this.scoreSound = this.sound.add("leeroy");
+    this.music = this.sound.add("music");
 
-    this.physics.add.collider(this.projectiles, this.powerUps,
-      function (projectile, powerUp) {
-        projectile.destroy();
-      });
-    this.physics.add.overlap(this.player, this.powerUps, this.pickPowerUp, undefined, this);
+    // configure music and play
+    var musicConfig = {
+      mute: false,
+      volume: 1,
+      rate: 1,
+      detune: 0,
+      seek: 0,
+      loop: true,
+      delay: 0
+    }
+    this.music.play(musicConfig);
 
-    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, undefined, this);
-
-    this.physics.add.overlap(this.projectiles, this.enemies, this.hitEnemy, undefined, this);
-
+    // make the score board at the top of the screen
+    this.score = 0;
+    this.scoreMult = 1;
+    this.scorePoint = 250;
+    // --makes the black rectangle background for the scoreboard--
     var graphics = this.add.graphics();
     graphics.fillStyle(0x000000, 1);
     graphics.beginPath();
@@ -115,31 +98,30 @@ export default class MainScene extends Phaser.Scene {
     graphics.lineTo(0, 0);
     graphics.closePath();
     graphics.fillPath();
-
-    this.score = 0;
+    // add bitmapTexts
     this.scoreLabel = this.add.bitmapText(10, 5, "pixelFont", "SCORE", 16);
+    this.livesLabel = this.add.bitmapText(this.scale.width - 60, 5, "pixelFont", "LIVES ", 16);
 
-    this.beamSound = this.sound.add("audio_beam");
-    this.explosionSound = this.sound.add("audio_explosion");
-    this.pickupSound = this.sound.add("audio_pickup");
-    this.scoreSound = this.sound.add("leeroy");
+    // create a group for the projectiles and powerUps
+    this.projectiles = this.add.group();
+    this.projectiles.runChildUpdate = true;
+    this.powerUps = this.add.group();
+    this.powerUps.runChildUpdate = true;
+    this.enemies = this.add.group();
+    this.enemies.runChildUpdate = true;
 
-    this.music = this.sound.add("music");
+    // create keyboard interaction
+    this.cursorKeys = this.input.keyboard.createCursorKeys();
+    this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    var musicConfig = {
-      mute: false,
-      volume: 1,
-      rate: 1,
-      detune: 0,
-      seek: 0,
-      loop: false,
-      delay: 0
-    }
-
-    this.music.play(musicConfig);
+    // physics overlaps
+    this.physics.add.overlap(this.player, this.powerUps, this.pickPowerUp, undefined, this);
+    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, undefined, this);
+    this.physics.add.overlap(this.projectiles, this.enemies, this.hitEnemy, undefined, this);
   }
 
-  zeroPad(number, size) {
+  // Pad the score with zeroes
+  zeroPad(number: number, size: number): string {
     var stringNumber = String(number);
     while (stringNumber.length < (size || 2)) {
       stringNumber = "0" + stringNumber;
@@ -147,18 +129,26 @@ export default class MainScene extends Phaser.Scene {
     return stringNumber;
   }
 
+  // interaction functions
   pickPowerUp(player, powerUp) {
-    powerUp.disableBody(true, true);
+    powerUp.destroy();
     this.pickupSound.play();
-    this.scoreMult += 1;
+    this.scoreMult++;
   }
 
   hurtPlayer(player, enemy) {
-    this.resetShipPos(enemy);
+    enemy.destroy();
 
     if (this.player.alpha < 1) {
       return;
     }
+
+    this.playerLives--;
+    if(this.playerLives < 0) {
+      localStorage.setItem("yourScore", this.score.toString(10));
+      this.scene.start('GameOverScene');
+    }
+
     var explosion = new Explosion(this, player.x, player.y);
     player.disableBody(true, true);
 
@@ -170,8 +160,12 @@ export default class MainScene extends Phaser.Scene {
     });
 
     this.explosionSound.play();
-    this.score -= 500;    
-    if(this.score < 0) {
+    this.playerExp = 0;
+    this.scoreMult = 1; 
+    this.score -= this.scorePoint/10;   
+    if(this.scorePoint > 250 && this.score < this.scorePoint/2) {
+      this.score = this.scorePoint/2;
+    } else if(this.score < 25) {
       this.score = 0;
     }
   }
@@ -199,62 +193,28 @@ export default class MainScene extends Phaser.Scene {
   }
 
   hitEnemy(projectile, enemy) {
+    enemy.hitpoints -= (this.playerBaseDmg + this.scoreMult/10);
+    if(enemy.hitpoints > 0) {
+      projectile.destroy();
+      return;
+    }
     var explosion = new Explosion(this, enemy.x, enemy.y);
 
     projectile.destroy();
-    this.resetShipPos(enemy);
-    this.score += (10 * this.scoreMult);
-    var scoreFormated = this.zeroPad(this.score, 6);
-    this.scoreLabel.text = "SCORE " + scoreFormated;
+    enemy.destroy();
+    this.score += (enemy.pointsWorth * this.scoreMult);
+    this.playerExp += (enemy.pointsWorth * this.scoreMult);
+    if(this.score >= this.scorePoint) {
+      this.scoreSound.play();
+      this.scorePoint = this.scorePoint * 2;
+      this.playerLives++;
+    }
+    
 
     this.explosionSound.play();
   }
 
-  moveShip(ship, speed) {
-    ship.y += speed;
-
-    if (ship.y > this.scale.height) {
-      this.resetShipPos(ship);
-    }
-  }
-
-  resetShipPos(ship) {
-    ship.y = 0;
-    ship.x = Phaser.Math.Between(0, this.scale.width);
-  }
-
-  destroyShip(pointer, gameObject) {
-    gameObject.setTexture("explosion");
-    gameObject.play("explode");
-  }
-
-  update() {
-    this.moveShip(this.ship1, 1);
-    this.moveShip(this.ship2, 2);
-    this.moveShip(this.ship3, 3);
-    this.moveShip(this.ship4, 1);
-    this.moveShip(this.ship5, 2);
-    this.moveShip(this.ship6, 3);
-
-    this.background.tilePositionY -= 0.5;
-
-    this.movePlayerManager();
-
-    if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
-      if (this.player.active) {
-        this.shootBeam();
-      }
-    }
-    for (var i = 0; i < this.projectiles.getChildren().length; i++) {
-      var beam = this.projectiles.getChildren()[i];
-      beam.update();
-    }   
-
-    if(this.score % 200 == 0) {
-      this.scoreSound.play();
-    }
-  }
-
+  // move player
   movePlayerManager() {
     if (this.cursorKeys.left.isDown) {
       this.player.setVelocityX(-200);
@@ -274,8 +234,71 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  // shoot beam
   shootBeam() {
     var beam = new Beam(this);
     this.beamSound.play();
+  }
+
+  addPowerUp() {
+    let powerUp = new PowerUp(this);
+  }
+
+  addEnemy(enemyType) {
+    if(enemyType === 3) {
+      let newEnemy = new HardEnemy(this);
+    } else if(enemyType === 2) {
+      let newEnemy = new MediumEnemy(this);
+    } else {
+      let newEnemy = new EasyEnemy(this);
+    }
+    
+  }
+
+  restart() {
+    this.scene.restart(this);
+  }
+
+  // update function
+  update() {
+    // scroll background
+    this.background.tilePositionY -= 0.5;
+
+    // move player
+    this.movePlayerManager();
+
+    // update score and lives labels
+    this.scoreLabel.text = "SCORE " + this.zeroPad(this.score, 6);
+    this.livesLabel.text = "Lives " + this.zeroPad(this.playerLives, 2);
+
+    // shoot beams when space is pressed
+    if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
+      if (this.player.active) {
+        this.shootBeam();
+      }
+    }
+    
+    // randomly generate powerups
+    if(Math.random() > 0.997) {
+      this.addPowerUp();
+    }
+
+    // randomly generate enemies
+    if(Math.random() > 0.95) {
+      let enemyType: number = Math.random();
+      if(enemyType > 0.7) {
+        this.addEnemy(3);
+      } else if(enemyType > 0.4) {
+        this.addEnemy(2);
+      } else {
+        this.addEnemy(1);
+      }
+    }
+
+    if(this.playerExp >= this.dmgUpExp) {
+      this.playerBaseDmg += 0.5;
+      this.playerExp = 0;
+      this.dmgUpExp += 250;
+    }
   }
 }
